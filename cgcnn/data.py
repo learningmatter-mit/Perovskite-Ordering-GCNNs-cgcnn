@@ -14,6 +14,81 @@ from torch.utils.data import Dataset, DataLoader
 from torch.utils.data.dataloader import default_collate
 from torch.utils.data.sampler import SubsetRandomSampler
 
+class PyMatgenDataset(Dataset):
+
+    def __init__(self, data, prop, max_num_nbr=14, radius=8, dmin=0, step=0.2,
+                 random_seed=123):
+        self.data = data
+        self.max_num_nbr, self.radius = max_num_nbr, radius
+        self.cache = {}
+        self.PyMatGenData = []
+        for index, row in self.data.iterrows():
+            self.PyMatGenData.append( (row['structure'],(row[prop+'_diff'],row[prop+'_interp']),row.name )  )
+        random.seed(random_seed)
+        random.shuffle(self.PyMatGenData)
+        atom_init_file = "atom_init.json"
+        self.ari = AtomCustomJSONInitializer(atom_init_file)
+        self.gdf = GaussianDistance(dmin=dmin, dmax=self.radius, step=step)
+
+    def __len__(self):
+        return len(self.data_filt)
+
+    @functools.lru_cache(maxsize=None)  # Cache loaded structures
+    def __getitem__(self, idx):
+
+        if idx in self.cache.keys():
+            #print("Cache: " + str(end-start))
+            return self.cache[idx]
+
+        crystal, target, cif_id = self.PyMatGenData[idx]
+
+        atom_fea = np.vstack([self.ari.get_atom_fea(crystal[i].specie.number)
+                              for i in range(len(crystal))])
+        atom_fea = torch.Tensor(atom_fea)
+        #assert crystal.lattice.a == crystal.lattice.b == crystal.lattice.c, "Not a cubic unit cell"
+        #factor = (len(crystal)/5)**(1/3)
+        #crystal.scale_lattice((factor*4.0)**3)
+        all_nbrs = crystal.get_all_neighbors(self.radius, include_index=True)
+        all_nbrs = [sorted(nbrs, key=lambda x: x[1]) for nbrs in all_nbrs]
+        nbr_fea_idx, nbr_fea = [], []
+        for nbr in all_nbrs:
+            if len(nbr) < self.max_num_nbr:
+                warnings.warn('{} not find enough neighbors to build graph. '
+                              'If it happens frequently, consider increase '
+                              'radius.'.format(cif_id))
+                nbr_fea_idx.append(list(map(lambda x: x[2], nbr)) +
+                                   [0] * (self.max_num_nbr - len(nbr)))
+                nbr_fea.append(list(map(lambda x: x[1], nbr)) + [self.radius + 1.] * (self.max_num_nbr - len(nbr)))
+#                 nbr_fea.append(list(map(lambda x: 0.0, nbr)) + [0.0] * (self.max_num_nbr - len(nbr)))
+            else:
+                nbr_fea_idx.append(list(map(lambda x: x[2],
+                                            nbr[:self.max_num_nbr])))
+                nbr_fea.append(list(map(lambda x: x[1], nbr[:self.max_num_nbr])))
+#                 nbr_fea.append(list(map(lambda x: 0.0, nbr[:self.max_num_nbr])))
+        nbr_fea_idx, nbr_fea = np.array(nbr_fea_idx), np.array(nbr_fea)
+        nbr_fea = self.gdf.expand(nbr_fea)
+        atom_fea = torch.Tensor(atom_fea)
+        nbr_fea = torch.Tensor(nbr_fea)
+        nbr_fea_idx = torch.LongTensor(nbr_fea_idx)
+        target = torch.tensor(float(target[0]))
+        self.cache[idx] = ((atom_fea, nbr_fea, nbr_fea_idx), target, cif_id)
+        return (atom_fea, nbr_fea, nbr_fea_idx), target, cif_id
+
+def get_cgcnn_loader(data,prop,batch_size,num_workers=0):
+    dataset = PyMatgenDataset(data,prop)
+    collate_fn = collate_pool
+    pin_memory=torch.cuda.is_available()
+
+    total_size = len(dataset)
+    indices = list(range(total_size))
+    sampler = SubsetRandomSampler(indices)
+
+    data_loader = DataLoader(dataset, batch_size=batch_size,
+                              sampler=sampler,
+                              num_workers=num_workers,
+                              collate_fn=collate_fn, pin_memory=pin_memory)
+
+    return data_loader
 
 def get_train_val_test_loader(dataset, collate_fn=default_collate,
                               batch_size=64, train_ratio=None,
