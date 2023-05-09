@@ -26,7 +26,7 @@ class PyMatgenDataset(Dataset):
             self.PyMatGenData.append( (row['structure'],(row[prop+'_diff'],row[prop+'_interp']),row.name )  )
         random.seed(random_seed)
         random.shuffle(self.PyMatGenData)
-        atom_init_file = "atom_init.json"
+        atom_init_file = "processing/dataloader/atom_init.json"
         self.ari = AtomCustomJSONInitializer(atom_init_file)
         self.gdf = GaussianDistance(dmin=dmin, dmax=self.radius, step=step)
 
