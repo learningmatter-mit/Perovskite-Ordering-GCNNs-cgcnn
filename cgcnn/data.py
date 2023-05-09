@@ -25,7 +25,7 @@ class PyMatgenDataset(Dataset):
         self.PyMatGenData = []
         Adaptor = AseAtomsAdaptor()
         for index, row in self.data.iterrows():
-            structure = Adaptor.get_structure(row["structure"])
+            structure = Adaptor.get_structure(row["ase_structure"])
             self.PyMatGenData.append( (structure,(row[prop+'_diff'],row[prop+'_interp']),row.name )  )
         random.seed(random_seed)
         random.shuffle(self.PyMatGenData)
