@@ -10,6 +10,7 @@ import warnings
 import numpy as np
 import torch
 from pymatgen.core.structure import Structure
+from pymatgen.io.ase import AseAtomsAdaptor
 from torch.utils.data import Dataset, DataLoader
 from torch.utils.data.dataloader import default_collate
 from torch.utils.data.sampler import SubsetRandomSampler
@@ -22,8 +23,10 @@ class PyMatgenDataset(Dataset):
         self.max_num_nbr, self.radius = max_num_nbr, radius
         self.cache = {}
         self.PyMatGenData = []
+        Adaptor = AseAtomsAdaptor()
         for index, row in self.data.iterrows():
-            self.PyMatGenData.append( (row['structure'],(row[prop+'_diff'],row[prop+'_interp']),row.name )  )
+            structure = Adaptor.get_structure(row["structure"])
+            self.PyMatGenData.append( (structure,(row[prop+'_diff'],row[prop+'_interp']),row.name )  )
         random.seed(random_seed)
         random.shuffle(self.PyMatGenData)
         atom_init_file = "processing/dataloader/atom_init.json"
