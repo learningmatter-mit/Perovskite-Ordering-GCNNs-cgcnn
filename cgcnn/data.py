@@ -31,7 +31,7 @@ class PyMatgenDataset(Dataset):
         self.gdf = GaussianDistance(dmin=dmin, dmax=self.radius, step=step)
 
     def __len__(self):
-        return len(self.data_filt)
+        return len(self.data)
 
     @functools.lru_cache(maxsize=None)  # Cache loaded structures
     def __getitem__(self, idx):
