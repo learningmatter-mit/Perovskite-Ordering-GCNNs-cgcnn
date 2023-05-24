@@ -26,7 +26,7 @@ class PyMatgenDataset(Dataset):
         Adaptor = AseAtomsAdaptor()
         for index, row in self.data.iterrows():
             structure = Adaptor.get_structure(row["ase_structure"])
-            self.PyMatGenData.append( (structure,(row[prop+'_diff'],row[prop+'_interp']),row.name )  )
+            self.PyMatGenData.append((structure,row[prop],row.name))
         random.seed(random_seed)
         random.shuffle(self.PyMatGenData)
         atom_init_file = "processing/dataloader/atom_init.json"
