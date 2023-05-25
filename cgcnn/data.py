@@ -73,7 +73,7 @@ class PyMatgenDataset(Dataset):
         atom_fea = torch.Tensor(atom_fea)
         nbr_fea = torch.Tensor(nbr_fea)
         nbr_fea_idx = torch.LongTensor(nbr_fea_idx)
-        target = torch.tensor(float(target[0]))
+        target = torch.tensor(float(target))
         self.cache[idx] = ((atom_fea, nbr_fea, nbr_fea_idx), target, cif_id)
         return (atom_fea, nbr_fea, nbr_fea_idx), target, cif_id
 
