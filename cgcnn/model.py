@@ -267,6 +267,7 @@ class PerSiteCGCNet(nn.Module):
             for fc, softplus in zip(self.fcs, self.softpluses):
                 atom_fea = softplus(fc(atom_fea))
         out = self.fc_out(atom_fea)
+        out = out.view(len(crystal_atom_idx),-1)
         #out = [out[idx_map] for idx_map in crystal_atom_idx]
 
         return out

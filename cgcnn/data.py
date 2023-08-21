@@ -17,8 +17,9 @@ from torch.utils.data.sampler import SubsetRandomSampler
 
 class PyMatgenDataset(Dataset):
 
-    def __init__(self, data, prop, max_num_nbr=14, radius=8, dmin=0, step=0.2,
+    def __init__(self, data, prop, max_num_nbr=14, radius=8, dmin=0, step=0.2, per_site = False,
                  random_seed=123):
+        
         self.data = data
         self.max_num_nbr, self.radius = max_num_nbr, radius
         self.cache = {}
@@ -32,6 +33,7 @@ class PyMatgenDataset(Dataset):
         atom_init_file = "processing/dataloader/atom_init.json"
         self.ari = AtomCustomJSONInitializer(atom_init_file)
         self.gdf = GaussianDistance(dmin=dmin, dmax=self.radius, step=step)
+        self.per_site = per_site
 
     def __len__(self):
         return len(self.data)
@@ -73,7 +75,10 @@ class PyMatgenDataset(Dataset):
         atom_fea = torch.Tensor(atom_fea)
         nbr_fea = torch.Tensor(nbr_fea)
         nbr_fea_idx = torch.LongTensor(nbr_fea_idx)
-        target = torch.tensor(float(target))
+        if self.per_site:
+            target = torch.tensor(target)
+        else:
+            target = torch.tensor(float(target))
         self.cache[idx] = ((atom_fea, nbr_fea, nbr_fea_idx), target, cif_id)
         return (atom_fea, nbr_fea, nbr_fea_idx), target, cif_id
 
