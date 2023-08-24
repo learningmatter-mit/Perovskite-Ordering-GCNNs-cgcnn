@@ -82,8 +82,8 @@ class PyMatgenDataset(Dataset):
         self.cache[idx] = ((atom_fea, nbr_fea, nbr_fea_idx), target, cif_id)
         return (atom_fea, nbr_fea, nbr_fea_idx), target, cif_id
 
-def get_cgcnn_loader(data,prop,batch_size,num_workers=0):
-    dataset = PyMatgenDataset(data,prop)
+def get_cgcnn_loader(data,prop,batch_size,num_workers=0,per_site=False):
+    dataset = PyMatgenDataset(data,prop,per_site=per_site)
     collate_fn = collate_pool
     pin_memory=torch.cuda.is_available()
 
