@@ -17,11 +17,16 @@ from torch.utils.data.sampler import SubsetRandomSampler
 
 class PyMatgenDataset(Dataset):
 
-    def __init__(self, data, prop, max_num_nbr=14, radius=8, dmin=0, step=0.2, per_site = False,
+    def __init__(self, data, prop, max_num_nbr=14, radius=8, dmin=0, step=0.2, per_site = False, long_range = False,
                  random_seed=123):
         
+
         self.data = data
-        self.max_num_nbr, self.radius = max_num_nbr, radius
+        self.long_range = long_range
+        if not self.long_range:
+            self.max_num_nbr, self.radius = max_num_nbr, radius
+        else:
+            self.max_num_nbr, self.radius = 40, 5.0
         self.cache = {}
         self.PyMatGenData = []
         Adaptor = AseAtomsAdaptor()
@@ -57,7 +62,12 @@ class PyMatgenDataset(Dataset):
         all_nbrs = [sorted(nbrs, key=lambda x: x[1]) for nbrs in all_nbrs]
         nbr_fea_idx, nbr_fea = [], []
         for nbr in all_nbrs:
-            if len(nbr) < self.max_num_nbr:
+            if self.long_range:
+                nbr_fea_idx.append(list(map(lambda x: x[2],
+                                            nbr)))
+                nbr_fea.append(list(map(lambda x: x[1], nbr)))
+
+            elif len(nbr) < self.max_num_nbr:
                 warnings.warn('{} not find enough neighbors to build graph. '
                               'If it happens frequently, consider increase '
                               'radius.'.format(cif_id))
@@ -82,8 +92,8 @@ class PyMatgenDataset(Dataset):
         self.cache[idx] = ((atom_fea, nbr_fea, nbr_fea_idx), target, cif_id)
         return (atom_fea, nbr_fea, nbr_fea_idx), target, cif_id
 
-def get_cgcnn_loader(data,prop,batch_size,num_workers=0,per_site=False):
-    dataset = PyMatgenDataset(data,prop,per_site=per_site)
+def get_cgcnn_loader(data,prop,batch_size,num_workers=0,per_site=False,long_range=False):
+    dataset = PyMatgenDataset(data,prop,per_site=per_site,long_range=long_range)
     collate_fn = collate_pool
     pin_memory=torch.cuda.is_available()
 
