@@ -26,7 +26,7 @@ class PyMatgenDataset(Dataset):
         if not self.long_range:
             self.max_num_nbr, self.radius = max_num_nbr, radius
         else:
-            self.max_num_nbr, self.radius = 40, 5.0
+            self.max_num_nbr, self.radius = 52, 8.0
         self.cache = {}
         self.PyMatGenData = []
         Adaptor = AseAtomsAdaptor()
@@ -62,12 +62,12 @@ class PyMatgenDataset(Dataset):
         all_nbrs = [sorted(nbrs, key=lambda x: x[1]) for nbrs in all_nbrs]
         nbr_fea_idx, nbr_fea = [], []
         for nbr in all_nbrs:
-            if self.long_range:
-                nbr_fea_idx.append(list(map(lambda x: x[2],
-                                            nbr)))
-                nbr_fea.append(list(map(lambda x: x[1], nbr)))
+            #if self.long_range:
+            #    nbr_fea_idx.append(list(map(lambda x: x[2],
+            #                                nbr)))
+            #    nbr_fea.append(list(map(lambda x: x[1], nbr)))
 
-            elif len(nbr) < self.max_num_nbr:
+            if len(nbr) < self.max_num_nbr:
                 warnings.warn('{} not find enough neighbors to build graph. '
                               'If it happens frequently, consider increase '
                               'radius.'.format(cif_id))
