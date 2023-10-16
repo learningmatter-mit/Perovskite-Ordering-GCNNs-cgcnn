@@ -269,7 +269,7 @@ class PerSiteCGCNet(nn.Module):
         out = self.fc_out(atom_fea)
         out = out.view(len(crystal_atom_idx),-1)
         #out = [out[idx_map] for idx_map in crystal_atom_idx]
-
+        out = out[:,16:]
         return out
 
 class Normalizer(object):
