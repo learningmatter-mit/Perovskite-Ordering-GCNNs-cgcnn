@@ -270,6 +270,7 @@ class PerSiteCGCNet(nn.Module):
         out = out.view(len(crystal_atom_idx),-1)
         #out = [out[idx_map] for idx_map in crystal_atom_idx]
         out = out[:,16:]
+        out = out.reshape(-1)
         return out
 
 class Normalizer(object):
